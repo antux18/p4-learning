@@ -14,7 +14,6 @@ header ethernet_t {
 }
 
 struct metadata {
-    /* empty */
 }
 
 struct headers {
@@ -30,10 +29,12 @@ parser MyParser(packet_in packet,
                 inout metadata meta,
                 inout standard_metadata_t standard_metadata) {
 
-      state start{
-
-          /* TODO 1: parse ethernet header */
-          transition accept;
+      state start {
+          transition parse_ethernet;
+      }
+      state parse_ethernet {
+        packet.extract(hdr.ethernet);
+        transition accept;
       }
 
 }
@@ -55,9 +56,20 @@ control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
 
+    action reflect_packet(
+        inout bit<48> src,
+        inout bit<48> dst,
+        in bit<9> inPort,
+        out bit<9> outPort
+    ) {
+        bit<48> tmp = src;
+        src = dst;
+        dst = tmp;
+        outPort = inPort;
+    }
+
     apply {
-       /* TODO 2: swap mac addresses */
-       /* TODO 3: set output port    */
+        reflect_packet(hdr.ethernet.srcAddr, hdr.ethernet.dstAddr, standard_metadata.ingress_port, standard_metadata.egress_spec);
     }
 }
 
@@ -85,7 +97,7 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
-        /* TODO 4: deparse ethernet header */
+        packet.emit(hdr.ethernet);
 	}
 }
 
