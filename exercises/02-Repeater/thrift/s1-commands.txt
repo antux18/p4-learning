@@ -1,1 +1,2 @@
-# TODO: populate table with forwarding rules
+table_add forward _forward 1 => 2
+table_add forward _forward 2 => 1
