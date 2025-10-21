@@ -19,7 +19,11 @@ header ethernet_t {
     bit<16>   etherType;
 }
 
-//TODO 2: define a new header type and name it `cpu_t`
+header cpu_t {
+    macAddr_t srcAddr;
+    @field_list(1)
+    bit<16> inPort;
+}
 
 struct metadata {
     //TODO 3: define a metadata field to carry the ingress_port with the cloned packet
@@ -27,7 +31,7 @@ struct metadata {
 
 struct headers {
     ethernet_t   ethernet;
-    //TODO 4: add cpu header to headers
+    cpu_t cpu;
 }
 
 
@@ -71,7 +75,32 @@ control MyIngress(inout headers hdr,
 
     //TODO 7: Define the smac table and the mac_learn action
 
-    //TODO 5: Define the dmac table and forward action
+    action drop() {
+
+        mark_to_drop(standard_metadata);
+    }
+
+    action forward(bit<9> egress_port) {
+        standard_metadata.egress_spec = egress_port;
+    }
+
+    action broadcast() {
+        //Empty action that was not necessary, we just call it when there is a table miss
+    }
+
+    table dmac {
+        key = {
+            hdr.ethernet.dstAddr: exact;
+        }
+
+        actions = {
+            forward;
+            broadcast;
+            NoAction;
+        }
+        size = 256;
+        default_action = NoAction;
+    }
 
     //TODO 6: Define the broadcast table and the set_mcast_grp action
 
