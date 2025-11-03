@@ -25,7 +25,7 @@ header cpu_t {
 }
 
 struct metadata {
-    @field_list(1)
+    @field_list(0)
     bit<9> ingress_port;
 }
 
@@ -82,7 +82,7 @@ control MyIngress(inout headers hdr,
 
     action mac_learn() {
         meta.ingress_port = standard_metadata.ingress_port;
-        clone_preserving_field_list(CloneType.I2E, 100, 1);
+        clone_preserving_field_list(CloneType.I2E, 100, 0);
     }
 
     table dmac {
@@ -124,7 +124,7 @@ control MyIngress(inout headers hdr,
         }
 
         size = 256;
-        default_action = NoAction;
+        default_action = mac_learn;
     }
 
     apply {
@@ -152,7 +152,7 @@ control MyEgress(inout headers hdr,
 
         if (standard_metadata.instance_type == 1) {
             hdr.cpu.setValid();
-            hdr.cpu.inPort = (bit<16>) standard_metadata.ingress_port;
+            hdr.cpu.inPort = (bit<16>) meta.ingress_port;
             hdr.cpu.srcAddr = hdr.ethernet.srcAddr;
             hdr.ethernet.etherType = L2_LEARN_ETHER_TYPE;
         }
